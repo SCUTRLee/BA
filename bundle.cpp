@@ -1109,33 +1109,33 @@ void Bundle::update(Mat& Dp,Mat& Df)
 
 
 
-// -----夝傪栠偡-----
+// -----更新参数-----
 void Bundle::unupdate(Mat& Dp,Mat& Df)
 {
-	// 3師尦埵抲偺峏怴
+	// 更新3D位置
 	for(int i=0;i<pointTotal;i++){
 		points.at<float>(i,0) -= Dp.at<float>(3*i+0,0);
 		points.at<float>(i,1) -= Dp.at<float>(3*i+1,0);
 		points.at<float>(i,2) -= Dp.at<float>(3*i+2,0);
 	}
 
-	// 僇儊儔曄悢偺峏怴
+	// 更新相机参数
 	// /FIX_OFF// /
 	if(fixFlag == FIX_OFF){
 		if(selfFlag == SELF_CALIB_ON){
-			cout << "幚憰偟偰傑偣傫" << endl;
+			cout << "未执行" << endl;
 			exit(1);
 		}
 		for(int i=0;i<frameTotal;i++){
-			// 暲恑
+			// 平移
 			T[i].at<float>(0,0) -= Df.at<float>(6*i+0,0);
 			T[i].at<float>(1,0) -= Df.at<float>(6*i+1,0);
 			T[i].at<float>(2,0) -= Df.at<float>(6*i+2,0);
-			// 夞揮
+			// 旋转
 			Mat Rodri = (Mat_<float>(3,3));
 			Rodrigues(Df(Range(6*i+3,6*i+6),Range(0,1)),Rodri);
 			R[i] = Rodri.t()*R[i];
-			// 徟揰嫍棧丆岝幉揰傪峏怴偡傞偲偒偺傒
+			// 仅在更新焦距和光轴点时
 			if(fcFlag == FC_VARIABLE){
 				K[i].at<float>(0,0) -= Df.at<float>(6*frameTotal+3*i+0,0);
 				K[i].at<float>(1,1) -= Df.at<float>(6*frameTotal+3*i+0,0);
@@ -1146,21 +1146,21 @@ void Bundle::unupdate(Mat& Dp,Mat& Df)
 	// /FIX_6// /
 	}else if(fixFlag == FIX_6){
 		if(selfFlag == SELF_CALIB_ON){
-			cout << "幚憰偟偰傑偣傫" << endl;
+			cout << "未执行" << endl;
 			exit(1);
 		}
-		// 徟揰嫍棧丆岝幉揰傪峏怴偡傞偲偒偺傒
+		// 仅在更新焦距和光轴点时
 		if(fcFlag == FC_VARIABLE){
 			K[0].at<float>(0,0) -= Df.at<float>(6*(frameTotal-1)+0,0);
 			K[0].at<float>(1,1) -= Df.at<float>(6*(frameTotal-1)+0,0);
 			K[0].at<float>(0,2) -= Df.at<float>(6*(frameTotal-1)+1,0);
 			K[0].at<float>(1,2) -= Df.at<float>(6*(frameTotal-1)+2,0);
 			for(int i=0;i<frameTotal-1;i++){
-				// 暲恑
+				// 平移
 				T[i+1].at<float>(0,0) -= Df.at<float>(6*i+0,0);
 				T[i+1].at<float>(1,0) -= Df.at<float>(6*i+1,0);
 				T[i+1].at<float>(2,0) -= Df.at<float>(6*i+2,0);
-				// 夞揮
+				// 旋转
 				Mat Rodri = (Mat_<float>(3,3));
 				Rodrigues(Df(Range(6*i+3,6*i+6),Range(0,1)),Rodri);
 				R[i+1] = Rodri.t()*R[i+1];
@@ -1170,7 +1170,7 @@ void Bundle::unupdate(Mat& Dp,Mat& Df)
 				K[i+1].at<float>(1,2) -= Df.at<float>(6*(frameTotal-1)+3*i+2,0);
 			}
 		}
-		// 徟揰嫍棧丆岝幉揰傪峏怴偟側偄
+		// 不更新焦距或光轴
 		else if(fcFlag == FC_FIX){
 			for(int i=0;i<frameTotal-1;i++){
 				// 暲恑
@@ -1188,7 +1188,7 @@ void Bundle::unupdate(Mat& Dp,Mat& Df)
 		}
 	// /FIX_7// /
 	}else{
-		// 徟揰嫍棧丆岝幉揰傪峏怴偡傞偲偒偺傒
+		// 仅在更新焦距和光轴点时
 		if(fcFlag == FC_VARIABLE || selfFlag == SELF_CALIB_ON){
 			K[0].at<float>(0,0) -= Df.at<float>(6*frameTotal-7+0,0);
 			K[0].at<float>(1,1) -= Df.at<float>(6*frameTotal-7+0,0);
@@ -1227,11 +1227,11 @@ void Bundle::unupdate(Mat& Dp,Mat& Df)
 			}
 
 			for(int i=0;i<frameTotal-2;i++){
-				// 暲恑
+				// 平移
 				T[i+2].at<float>(0,0) -= Df.at<float>(5+6*i+0,0);
 				T[i+2].at<float>(1,0) -= Df.at<float>(5+6*i+1,0);
 				T[i+2].at<float>(2,0) -= Df.at<float>(5+6*i+2,0);
-				// 夞揮
+				// 旋转
 				Mat Rodri = (Mat_<float>(3,3));
 				Rodrigues(Df(Range(5+6*i+3,5+6*i+6),Range(0,1)),Rodri);
 				R[i+2] = Rodri.t()*R[i+2];
@@ -1248,7 +1248,7 @@ void Bundle::unupdate(Mat& Dp,Mat& Df)
 				}
 			}
 		}
-		// 徟揰嫍棧丆岝幉揰傪峏怴偟側偄
+		// 不要更新焦距和光轴点
 		else if(fcFlag == FC_FIX){	
 			if(fixFlag == FIX_7_TX){
 				T[1].at<float>(1,0) -= Df.at<float>(0,0);
@@ -1265,11 +1265,11 @@ void Bundle::unupdate(Mat& Dp,Mat& Df)
 			R[1] = Rodri.t()*R[1];
 
 			for(int i=0;i<frameTotal-2;i++){
-				// 暲恑
+				// 平移
 				T[i+2].at<float>(0,0) -= Df.at<float>(5+6*i+0,0);
 				T[i+2].at<float>(1,0) -= Df.at<float>(5+6*i+1,0);
 				T[i+2].at<float>(2,0) -= Df.at<float>(5+6*i+2,0);
-				// 夞揮
+				// 旋转
 				Mat Rodri = (Mat_<float>(3,3));
 				Rodrigues(Df(Range(5+6*i+3,5+6*i+6),Range(0,1)),Rodri);
 				R[i+2] = Rodri.t()*R[i+2];
