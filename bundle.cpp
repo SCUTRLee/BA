@@ -51,6 +51,7 @@ void Bundle::start(selfParam _selfFlag, fixParam _fixFlag, fcParam _fcFlag, self
 		Point minLoc, maxLoc;
 		Mat T1copy;
 		T[1].copyTo(T1copy);
+		
 		T1copy.at<float>(0,0) = std::abs(T1copy.at<float>(0,0));
 		T1copy.at<float>(1,0) = std::abs(T1copy.at<float>(1,0));
 		T1copy.at<float>(2,0) = std::abs(T1copy.at<float>(2,0));
@@ -747,7 +748,7 @@ void Bundle::calcHg(Mat& HE,Mat& HF,Mat& HG,Mat& Gp,Mat& Gf){
 // 解方程
 void Bundle::solveHg(Mat& HE,Mat& HF,Mat& HG,Mat& Gp,Mat& Gf,Mat& Dp,Mat& Df)
 {
-	// cout << "\t  Df偺寁嶼" << endl;
+	// cout << "\t  计算Df" << endl;
 
 	int num;
 	if(selfFlag == SELF_CALIB_ON && selfAlterFlag == ALTERNATE_ON){
@@ -756,10 +757,10 @@ void Bundle::solveHg(Mat& HE,Mat& HF,Mat& HG,Mat& Gp,Mat& Gf,Mat& Dp,Mat& Df)
 		num = param;
 	}
 	
-	// 嵍偺學悢晹暘 G-FEF
+	// 左边系数 G-FEF
 	Mat FEF = (Mat_<float>(num*frameTotal-freedom,num*frameTotal-freedom));
 	FEF = Scalar::all(0);
-	// 塃偺學悢晹暘 FEGp-Gf
+	// 右边系数 FEGp-Gf
 	Mat FEGp = (Mat_<float>(num*frameTotal-freedom,1));
 	FEGp = Scalar::all(0);
 
@@ -772,20 +773,18 @@ void Bundle::solveHg(Mat& HE,Mat& HF,Mat& HG,Mat& Gp,Mat& Gf,Mat& Dp,Mat& Df)
 		FEGp += Fi.t() * Einv * Gpi;
 	}
 
-	// 楢棫堦師曽掱幃傪夝偄偰Df傪媮傔傞
+	// 解线性方程，求解Df
 	cv::solve(HG-FEF, FEGp-Gf, Df);
 
-
-	// cout << "\t  Dp偺寁嶼" << endl;
 	for(int i=0;i<pointTotal;i++){
-		// Mat梡堄
+		// Mat 定义
 		Mat Dpi = (Mat_<float>(3,1));
 		Mat Einv = HE(Range(3*i,3*i+3),Range(0,3)).inv();
 		Mat Fi = HF(Range(3*i,3*i+3),Range(0,num*frameTotal-freedom));
 		Mat Gpi = Gp(Range(3*i,3*i+3),Range(0,1));
-		// Dpi寁嶼
+		// 计算Dpi
 		Dpi = -(Einv*(Fi*Df+Gpi));
-		// 戙擖
+		// 代入
 		Dp.at<float>(3*i+0,0) = Dpi.at<float>(0,0);
 		Dp.at<float>(3*i+1,0) = Dpi.at<float>(1,0);
 		Dp.at<float>(3*i+2,0) = Dpi.at<float>(2,0);
